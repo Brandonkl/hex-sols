@@ -1,0 +1,11 @@
+[package]
+name = "numtheory"
+version = "0.1.1"
+authors = ["Michael Lamparski <diagonaldevice@gmail.com>"]
+
+[dependencies]
+num-traits = "0.1.33"
+num-integer = "0.1.32"
+
+[dev-dependencies]
+rand = "0.3"
