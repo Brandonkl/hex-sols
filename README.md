@@ -1,6 +1,6 @@
 This repo contains a lot of ancient code back when I first started exploring tBLG.
 
-```
+```sh
 git clone https://github.com/exphp-share/moire-exact
 git clone https://github.com/exphp-share/hex-sols
 git clone https://github.com/exphp-share/rust-sols
