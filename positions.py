@@ -3,26 +3,29 @@
 # Transform haskell output into less sucky json and compute positions.
 # (implicit units of C-C bond length)
 
-# NOTE: This thing is a *right mess*, and a good half of it could
-#       probably be deleted and would never be missed
+# NOTE: This thing is a *right mess*.  It started out general and then
+#       a bunch of hacks were piled on to make it better for hexagonal.
+#       Some of it's translated from *Haskell*.
+#       Half of it could probably be deleted and would never be missed
 
 from moire.exact import MoirePattern, find_nicer_cell
 from sympy import S, Matrix, sqrt, oo, rot_axis3, atan2, simplify
 
+import functools
 import itertools
 import sys
 import json
 
 class Layout:
-    VOLUME_LETTER = 'volume'
     ABC_SCALE = 'a-b-c-n-d-k'
     VOLUME_DISAMBIG = 'volume-disambig'
-    all = [VOLUME_LETTER, ABC_SCALE, VOLUME_DISAMBIG]
+    all = [ABC_SCALE, VOLUME_DISAMBIG]
 
 class Input:
-    HASKELL = 'haskell'
-    RUST_PAIRS = 'rust-pairs'
-    all = [RUST_PAIRS, HASKELL]
+    HASKELL = 'haskell' # legacy format with beta and scale factor:  [BETA, [A, B, C], {"numerator": N, "denominator": D, "rootNum": R}]
+    ABC = 'abc'  # [A, B, C]
+    RUST_PAIRS = 'rust-pairs'  # a pair of solutions [[A1, B1, C1], [A2, B2, C2]] that are theta and 60-theta
+    all = [RUST_PAIRS, HASKELL, ABC]
 
 def main():
     global PARANOID
@@ -35,7 +38,6 @@ def main():
         help="interpret the input file as JSON Lines format rather than standard JSON"
     )
     parser.add_argument(
-        # FIXME find who is using this and change it to --stream-out
         '--stream-out',
         action='store_true',
         help="outputting json dicts one by one instead of a list."
@@ -50,7 +52,7 @@ def main():
     parser.add_argument(
         '--key-layout', '-k', default=Layout.ABC_SCALE, choices=Layout.all)
     parser.add_argument(
-        '--input-format', default=Input.HASKELL, choices=Input.all)
+        '--input-format', default=Input.RUST_PAIRS, choices=Input.all)
     args = parser.parse_args()
 
     PARANOID = args.paranoid - args.carefree
@@ -66,22 +68,26 @@ def main():
         else:
             yield from json.load(sys.stdin)
 
+    run_sol = functools.partial(main_, min_volume=args.min_volume, max_volume=args.max_volume, key_layout=args.key_layout)
+
+    # beta = 3, r = 1
+    add_parts_for_hex = lambda abc: (3, abc, {'numerator': 1, 'denominator': 1, 'rootNum': 1})
     if args.input_format == Input.HASKELL:
         def handle_item(x):
-            yield main_(x, args.key_layout, args.min_volume, args.max_volume)
+            yield run_sol(x)
+    elif args.input_format == Input.ABC:
+        def handle_item(abc):
+            yield run_sol(add_parts_for_hex(abc))
     elif args.input_format == Input.RUST_PAIRS:
         def handle_item(xs):
             a, b = xs
-            # beta = 3, r = 1
-            add_parts = lambda abc: (3, abc, {'numerator': 1, 'denominator': 1, 'rootNum': 1})
-            # cheaper computation of volume under these conditions
             volume = a[2] if a[2] % 2 == 1 else a[2] // 2
             if args.min_volume is not None and not (args.min_volume <= volume):
                 return
             if args.max_volume is not None and not (volume <= args.max_volume):
                 return
-            yield main_(add_parts(a), args.key_layout, args.min_volume, args.max_volume, partner=b)
-            yield main_(add_parts(b), args.key_layout, args.min_volume, args.max_volume, partner=a)
+            yield run_sol(add_parts_for_hex(a), partner=b)
+            yield run_sol(add_parts_for_hex(b), partner=a)
     else:
         assert False
 
@@ -110,17 +116,11 @@ def main():
 
 
 def main_(soln, key_layout, min_volume, max_volume, partner=None):
-    # Make sure I get smacked over the head with the realization that
-    #  "no, you haven't fixed this yet!!"
-    if key_layout is Layout.VOLUME_LETTER:
-        print('WARNING: It was found that "volume" layout keys are not unique.'
-            ' This will probably fail.', file=sys.stderr)
-
     beta, (a, b, c), rparts = soln
     rn = int(rparts['numerator'])
     rd = int(rparts['denominator'])
     rk = int(rparts['rootNum'])
-    r = S(rn) / rd * sqrt(rk)
+    r = S(rn) / rd * sqrt(rk) # scale factor (for layers of different cell sizes, e.g. graphene and h-BN)
 
     # family matrices and sites ought to be added to input
     #  before we start trying anything but hex
@@ -147,25 +147,9 @@ def main_(soln, key_layout, min_volume, max_volume, partner=None):
             key_parts = [a, b, c, rn, rd, rk]
             key_string = '-'.join(map(str, map(int, key_parts)))
 
-        elif key_layout == Layout.VOLUME_LETTER:
-            assert rn == rd == rk == 1, "nontrivial scale not supported"
-
-            # encode just volume, and disambiguate using letters
-            # HACK: hardcoded disambiguation scheme for hexagonal.
-            #       we classify into 30 degree ranges a=[0,30), b=[30,60), c=[60,90)
-            import math
-            if (a,b,c) == (1,1,2): # 60 degrees exact
-                letter = 'b'
-            else: # we can trust floating point precision for the rest
-                letter = chr(ord('a') + int(math.acos(a/c) // (math.pi / 6)))
-
-            v = int(positions['meta']['volume'][0]) # de-sympify due to poor support for format specs
-            key_parts = [v, letter]
-            key_string = f'{v:03d}-{letter}'
-
         elif key_layout == Layout.VOLUME_DISAMBIG:
             assert rn == rd == rk == 1, "nontrivial scale not supported"
-            assert partner is not None, "need partner"
+            assert partner is not None, "need partner; use rust-pairs format"
 
             # This encoding fixes the non-uniqueness of VOLUME_LETTER by incorporating the
             #  value of 'c - a' for the solution with angle < 30.
@@ -195,8 +179,8 @@ def main_(soln, key_layout, min_volume, max_volume, partner=None):
             #    are uniquely labeled by (c-a, v), where v is the solution volume.
             #
             # I am as yet unable to prove this... BUT! I verified it by brute force for
-            # all solutions with c < 100_000.
-            assert c < 100000, "conjecture not proven for such large c"
+            # all solutions with c < 10_000_000, which gives angles down to 0.018121 degrees
+            assert v < 10_000_000, "conjecture not proven for such large volume"
 
             disambig = effective_c - effective_a
             key_parts = [v, disambig, letter]
@@ -367,6 +351,17 @@ def lammps_friendly_cell(m):
     assert m[3] > 0, str(m)
     return (m, trans)
 
+HNF_SEARCH_BUILT = False
+def run_hnf_search():
+    import subprocess
+    from subprocess import Popen, PIPE
+
+    global HNF_SEARCH_BUILT
+    if not HNF_SEARCH_BUILT:
+        subprocess.run(['cargo', 'build', '--release'], cwd='rust/hnf-search', check=True)
+        HNF_SEARCH_BUILT = True
+
+    return Popen('rust/hnf-search/target/release/hnf-search', stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
 # Input:  Integer supercell matrix
 # Output: (iMax, jMax), the max number of unique images along each axis
@@ -377,8 +372,9 @@ def supercellMaxIndices(m):
     # "yet another implementation" of an algorithm that shows up 50 bajillion times in this code
     # base), but when it comes to unit cells that are tens of thousands of atoms,
     # python is *just too slow*.
-    from subprocess import Popen, PIPE
-    p = Popen('hnf-search/target/release/hnf-search', stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    import subprocess
+
+    p = run_hnf_search()
     mInv = m.inv().tolist()
     mInv = [[x.as_numer_denom() for x in row] for row in mInv]
     mInv = [["{}/{}".format(n,d) for (n,d) in row] for row in mInv]

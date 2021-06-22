@@ -7,4 +7,4 @@ version = "0.1.0"
 combine = "2.3.2"
 
 [dependencies.numtheory]
-git = "../numtheory"
+path = "../numtheory"

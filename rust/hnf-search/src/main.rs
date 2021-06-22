@@ -21,7 +21,6 @@
 // Output: an integer lower-triangular HNF matrix on stdout that can be multiplied on the left
 //         of the input matrix to produce an integer matrix.
 
-#![feature(trace_macros)]
 extern crate combine;
 extern crate numtheory;
 use ::std::io::prelude::*;
