@@ -1,3 +1,5 @@
+This repo was developed by @exphp-share
+
 ```sh
 git clone https://github.com/Brandonkl/moire-exact
 git clone https://github.com/Brandonkl/hex-sols
