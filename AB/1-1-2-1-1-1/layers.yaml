@@ -1,0 +1,84 @@
+lattice:
+- - 1.0
+  - 0.0
+- - -0.5
+  - 0.8660254037844386
+layer:
+- elements:
+  - S
+  frac-lattice:
+  - - 1.0
+    - 0.0
+  - - 0.0
+    - 1.0
+  frac-sites:
+  - - 0.6666666666666666
+    - 0.3333333333333333
+  repeat:
+  - 1
+  - 1
+- elements:
+  - Mo
+  frac-lattice:
+  - - 1.0
+    - 0.0
+  - - 0.0
+    - 1.0
+  frac-sites:
+  - - 0.0
+    - 0.0
+  repeat:
+  - 1
+  - 1
+- elements:
+  - S
+  frac-lattice:
+  - - 1.0
+    - 0.0
+  - - 0.0
+    - 1.0
+  frac-sites:
+  - - 0.6666666666666666
+    - 0.3333333333333333
+  repeat:
+  - 1
+  - 1
+- elements:
+  - S
+  frac-lattice:
+  - - 1.0
+    - 1.0
+  - - -1.0
+    - 0.0
+  frac-sites:
+  - - 0.0
+    - 0.0
+  repeat:
+  - 1
+  - 1
+- elements:
+  - Mo
+  frac-lattice:
+  - - 1.0
+    - 1.0
+  - - -1.0
+    - 0.0
+  frac-sites:
+  - - 0.6666666666666666
+    - 0.3333333333333333
+  repeat:
+  - 1
+  - 1
+- elements:
+  - S
+  frac-lattice:
+  - - 1.0
+    - 1.0
+  - - -1.0
+    - 0.0
+  frac-sites:
+  - - 0.0
+    - 0.0
+  repeat:
+  - 1
+  - 1

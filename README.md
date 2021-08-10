@@ -1,9 +1,7 @@
-This repo contains a lot of ancient code back when I first started exploring tBLG.
-
 ```sh
-git clone https://github.com/exphp-share/moire-exact
-git clone https://github.com/exphp-share/hex-sols
-git clone https://github.com/exphp-share/rust-sols
+git clone https://github.com/Brandonkl/moire-exact
+git clone https://github.com/Brandonkl/hex-sols
+git clone https://github.com/Brandonkl/rust-sols
 
 (cd moire-exact && python3 -m pip install .)  # this is a library used by positions.py
 
@@ -21,4 +19,5 @@ python3 positions.py <../rust-sols/sols.json >positions.json
 python3 make-inputs.py --params params/graphene.yaml <positions.json
 ```
 
-This will generate `layers.yaml` for all of the patterns, for use in `rsp2`.
+#create MoS2 cells from position solutions, change "data" to position solution directory.
+python3 MoS2.py data

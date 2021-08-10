@@ -37,8 +37,8 @@ def main():
         help='python3 expression for a list of length-2 lists;'
         ' one for each layer in --layer-index.')
     args = parser.parse_args()
-
-    spatial_params_base = yaml.load(open(args.params))
+    
+    spatial_params_base = yaml.load(open(args.params), Loader=yaml.FullLoader)
     # target-supercell: Lower bounds on supercell sidelength, in units of the single-layer graphene cell
     DEFAULT_TARGET_SUPERCELL = {
         'phonopy': 0,  # used to set phonopy.supercell_dim in sp2's config.json
