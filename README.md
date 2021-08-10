@@ -17,7 +17,7 @@ python3 positions.py <../rust-sols/sols.json >positions.json
 
 # Generate layers.yaml from them.
 python3 make-inputs.py --params params/graphene.yaml <positions.json
-```
 
-#create MoS2 cells from position solutions, change "data" to position solution directory.
+# create MoS2 cells from position solutions, change "data" to position solution directory.
 python3 MoS2.py data
+'''
